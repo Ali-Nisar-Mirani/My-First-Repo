@@ -1,4 +1,8 @@
-const API_UPLOAD_URL = "/upload";
+const API_UPLOAD_URL =
+  window.location.protocol === "file:"
+    ? "http://127.0.0.1:8000/upload"
+    : `${window.location.origin}/upload`;
+
 const dropZone = document.getElementById("dropZone");
 const fileInput = document.getElementById("fileInput");
 const browseBtn = document.getElementById("browseBtn");
@@ -42,7 +46,6 @@ function handleFile(file) {
   selectedFile = file;
   fileName.textContent = `Selected: ${file.name}`;
   analyzeBtn.disabled = false;
-
   const url = URL.createObjectURL(file);
   videoPreview.src = url;
   videoPreview.classList.remove("hidden");
@@ -68,6 +71,16 @@ function stopProgress() {
   setTimeout(() => (progressBar.style.width = "0%"), 300);
 }
 
+async function parseResponse(res) {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    if (!res.ok) throw new Error(`Server error (${res.status}). ${text.slice(0, 120)}`);
+    throw new Error("Unexpected non-JSON response from server.");
+  }
+}
+
 analyzeBtn.addEventListener("click", async () => {
   if (!selectedFile) return;
   loading.classList.remove("hidden");
@@ -79,7 +92,7 @@ analyzeBtn.addEventListener("click", async () => {
 
   try {
     const res = await fetch(API_UPLOAD_URL, { method: "POST", body: formData });
-    const data = await res.json();
+    const data = await parseResponse(res);
     if (!res.ok) throw new Error(data.detail || "Analysis failed");
 
     const badgeClass = data.result === "FAKE" ? "fake" : "real";
@@ -92,8 +105,15 @@ analyzeBtn.addEventListener("click", async () => {
     `;
     resultCard.classList.remove("hidden");
   } catch (err) {
-    const raw = err?.message || "Unknown error";
-    showError(raw.toLowerCase().includes("failed to fetch") ? "Backend is not running. Start: uvicorn backend.app:app --reload --port 8000" : raw);
+    const msg = err?.message || "Unknown error";
+    if (msg.toLowerCase().includes("failed to fetch")) {
+      const hint = window.location.protocol === "file:"
+        ? "You opened HTML directly. Start backend and open http://127.0.0.1:8000"
+        : "Backend not reachable or crashed. Check terminal logs and /health endpoint.";
+      showError(hint);
+    } else {
+      showError(msg);
+    }
   } finally {
     stopProgress();
     loading.classList.add("hidden");

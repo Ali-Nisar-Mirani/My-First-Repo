@@ -45,6 +45,8 @@ No separate frontend server is required now. FastAPI serves the UI automatically
 
 Open: `http://127.0.0.1:8000`
 
+> Important: do not open `frontend/index.html` directly via file browser for normal use. Use the FastAPI URL above.
+
 
 ## Run check
 - Visit `http://127.0.0.1:8000/health` and confirm `{"status":"ok"}`
