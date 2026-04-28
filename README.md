@@ -47,6 +47,20 @@ python -m http.server 5500
 ```
 Then open `http://127.0.0.1:5500`.
 
+
+## Troubleshooting
+- **Error: Failed to fetch** usually means the frontend cannot reach the backend.
+- Start backend from repository root:
+  ```bash
+  uvicorn backend.app:app --host 0.0.0.0 --port 8000
+  ```
+- Confirm health endpoint works: `http://127.0.0.1:8000/health`
+- If backend runs on a different host/port, set it in browser console:
+  ```js
+  localStorage.setItem("deepfake_api_base", "http://127.0.0.1:8000")
+  location.reload()
+  ```
+
 ## API
 ### `POST /upload`
 - **Form field**: `file` (video)
