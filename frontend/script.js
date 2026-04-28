@@ -1,7 +1,6 @@
-const API_UPLOAD_URL =
-  window.location.protocol === "file:"
-    ? "http://127.0.0.1:8000/upload"
-    : `${window.location.origin}/upload`;
+const API_BASE = window.location.protocol === "file:" ? "http://127.0.0.1:8000" : window.location.origin;
+const API_UPLOAD_URL = `${API_BASE}/upload`;
+const API_HEALTH_URL = `${API_BASE}/health`;
 
 const dropZone = document.getElementById("dropZone");
 const fileInput = document.getElementById("fileInput");
@@ -12,6 +11,7 @@ const analyzeBtn = document.getElementById("analyzeBtn");
 const loading = document.getElementById("loading");
 const progressBar = document.getElementById("progressBar");
 const resultCard = document.getElementById("resultCard");
+const apiStatus = document.getElementById("apiStatus");
 
 let selectedFile = null;
 let progressTimer = null;
@@ -50,6 +50,21 @@ function handleFile(file) {
   videoPreview.src = url;
   videoPreview.classList.remove("hidden");
 }
+
+
+async function checkBackendStatus() {
+  try {
+    const res = await fetch(API_HEALTH_URL);
+    if (!res.ok) throw new Error();
+    apiStatus.textContent = `Backend connected: ${API_BASE}`;
+    apiStatus.className = "status ok";
+  } catch {
+    apiStatus.textContent = `Backend not reachable at ${API_BASE}. Start: uvicorn backend.app:app --reload --port 8000`;
+    apiStatus.className = "status bad";
+  }
+}
+
+checkBackendStatus();
 
 function showError(message) {
   resultCard.innerHTML = `<p class="error">Error: ${message}</p>`;
@@ -107,10 +122,7 @@ analyzeBtn.addEventListener("click", async () => {
   } catch (err) {
     const msg = err?.message || "Unknown error";
     if (msg.toLowerCase().includes("failed to fetch")) {
-      const hint = window.location.protocol === "file:"
-        ? "You opened HTML directly. Start backend and open http://127.0.0.1:8000"
-        : "Backend not reachable or crashed. Check terminal logs and /health endpoint.";
-      showError(hint);
+      showError(`Cannot reach backend at ${API_BASE}. Open ${API_BASE}/health to verify.`);
     } else {
       showError(msg);
     }
