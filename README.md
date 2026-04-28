@@ -99,3 +99,8 @@ Open: `http://127.0.0.1:8000`
 - Test backend health: `GET /health`
 - Upload sample videos using the web UI.
 - Confirm response includes `result`, `confidence`, and `frames_analyzed`.
+
+
+## Demo fallback mode
+If the backend is unreachable, the frontend now shows a **demo fallback result** so the UI remains usable.
+This fallback is **not real ML inference**; start backend at `http://127.0.0.1:8000` for true deepfake detection.

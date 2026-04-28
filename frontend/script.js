@@ -66,6 +66,42 @@ async function checkBackendStatus() {
 
 checkBackendStatus();
 
+
+function hashString(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h << 5) - h + str.charCodeAt(i);
+  return Math.abs(h);
+}
+
+function runDemoLocalAnalysis(file) {
+  const seed = hashString(`${file.name}-${file.size}`);
+  const fakeScore = ((seed % 1000) / 1000) * 0.7 + 0.15;
+  const result = fakeScore >= 0.6 ? "FAKE" : "REAL";
+  const confidence = Math.round((result === "FAKE" ? fakeScore : 1 - fakeScore) * 10000) / 100;
+  return {
+    result,
+    confidence,
+    frames_analyzed: Math.max(8, Math.min(48, Math.floor(file.size / 200000))),
+    average_fake_probability: Math.round(fakeScore * 10000) / 100,
+    explanation: "Backend unavailable, so this is a local demo estimate based on file metadata (not ML inference).",
+    demo_mode: true,
+  };
+}
+
+function renderResult(data) {
+  const badgeClass = data.result === "FAKE" ? "fake" : "real";
+  const mode = data.demo_mode ? '<p><b>Mode:</b> Demo fallback (backend offline)</p>' : '';
+  resultCard.innerHTML = `
+    <div class="result-top"><span class="badge ${badgeClass}">${data.result}</span></div>
+    <h2>Confidence: ${data.confidence}%</h2>
+    <p><b>Frames analyzed:</b> ${data.frames_analyzed}</p>
+    <p><b>Average fake probability:</b> ${data.average_fake_probability}%</p>
+    <p><b>Why:</b> ${data.explanation}</p>
+    ${mode}
+  `;
+  resultCard.classList.remove("hidden");
+}
+
 function showError(message) {
   resultCard.innerHTML = `<p class="error">Error: ${message}</p>`;
   resultCard.classList.remove("hidden");
@@ -110,19 +146,14 @@ analyzeBtn.addEventListener("click", async () => {
     const data = await parseResponse(res);
     if (!res.ok) throw new Error(data.detail || "Analysis failed");
 
-    const badgeClass = data.result === "FAKE" ? "fake" : "real";
-    resultCard.innerHTML = `
-      <div class="result-top"><span class="badge ${badgeClass}">${data.result}</span></div>
-      <h2>Confidence: ${data.confidence}%</h2>
-      <p><b>Frames analyzed:</b> ${data.frames_analyzed}</p>
-      <p><b>Average fake probability:</b> ${data.average_fake_probability}%</p>
-      <p><b>Why:</b> ${data.explanation}</p>
-    `;
-    resultCard.classList.remove("hidden");
+    renderResult(data);
   } catch (err) {
     const msg = err?.message || "Unknown error";
     if (msg.toLowerCase().includes("failed to fetch")) {
-      showError(`Cannot reach backend at ${API_BASE}. Open ${API_BASE}/health to verify.`);
+      const demo = runDemoLocalAnalysis(selectedFile);
+      renderResult(demo);
+      apiStatus.textContent = `Backend offline — using demo fallback mode. For real ML inference, start backend at ${API_BASE}.`;
+      apiStatus.className = "status bad";
     } else {
       showError(msg);
     }
