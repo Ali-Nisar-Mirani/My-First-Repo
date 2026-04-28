@@ -1,0 +1,82 @@
+# Deepfake Video Detector (Offline)
+
+A production-structured offline web app that detects whether a video is likely **REAL** or **FAKE**.
+
+## Features
+- Drag-and-drop video upload UI
+- FastAPI backend with `/upload` inference endpoint
+- OpenCV frame extraction (1 frame/second)
+- Haar Cascade face detection
+- Local PyTorch model inference (no paid APIs, no external keys)
+- Result with label, confidence, explanation, and analyzed frame count
+
+## Project Structure
+```
+project/
+├── backend/
+│   ├── app.py
+│   ├── model.py
+│   ├── utils.py
+│   ├── requirements.txt
+│   └── uploads/
+├── frontend/
+│   ├── index.html
+│   ├── script.js
+│   └── styles.css
+├── model/
+│   └── pretrained_model.pth   # optional user-provided weights
+└── README.md
+```
+
+## Setup
+### 1) Backend
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cd ..
+uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
+```
+
+### 2) Frontend
+Open `frontend/index.html` directly in your browser, or serve it:
+```bash
+cd frontend
+python -m http.server 5500
+```
+Then open `http://127.0.0.1:5500`.
+
+## API
+### `POST /upload`
+- **Form field**: `file` (video)
+- **Returns**:
+```json
+{
+  "result": "FAKE",
+  "confidence": 87.5,
+  "frames_analyzed": 32,
+  "average_fake_probability": 81.2,
+  "explanation": "High facial texture inconsistency detected across sampled frames."
+}
+```
+
+## Pipeline Explanation
+1. Video is uploaded and temporarily saved.
+2. Frames are extracted using OpenCV at 1 frame per second.
+3. Haar Cascade detects faces in each frame.
+4. Largest face is cropped and preprocessed.
+5. PyTorch model predicts fake probability per face.
+6. Probabilities are averaged across frames.
+7. Threshold rule (`>= 0.6`) => FAKE, otherwise REAL.
+
+## Model Notes
+- By default, the app uses a lightweight fallback CNN (`SimpleDeepfakeCNN`).
+- For better performance, place your open-source pretrained weights at:
+  `model/pretrained_model.pth`
+- The backend will auto-load those weights if available.
+
+## Testing
+- Test backend health: `GET /health`
+- Upload sample videos using the web UI.
+- Confirm response includes `result`, `confidence`, and `frames_analyzed`.
