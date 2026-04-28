@@ -37,6 +37,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 cd ..
 uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
+# (alternative) cd backend && uvicorn app:app --reload --port 8000
 ```
 
 ### 2) Frontend
@@ -56,6 +57,7 @@ Open: `http://127.0.0.1:8000`
   uvicorn backend.app:app --host 0.0.0.0 --port 8000
   ```
 - Confirm health endpoint works: `http://127.0.0.1:8000/health`
+- If startup fails, ensure dependencies are installed in your active virtualenv and use one of the two startup commands above.
 - If backend runs on a different host/port, set it in browser console:
   ```js
   localStorage.setItem("deepfake_api_base", "http://127.0.0.1:8000")

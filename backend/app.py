@@ -8,8 +8,12 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from model import DeepfakeModel
-from utils import cleanup_path, crop_largest_face, detect_faces, extract_frames
+try:
+    from .model import DeepfakeModel
+    from .utils import cleanup_path, crop_largest_face, detect_faces, extract_frames
+except ImportError:
+    from model import DeepfakeModel
+    from utils import cleanup_path, crop_largest_face, detect_faces, extract_frames
 
 app = FastAPI(title="Deepfake Video Detector")
 
@@ -30,9 +34,6 @@ FRAME_DIR.mkdir(parents=True, exist_ok=True)
 
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 model = DeepfakeModel(model_path=str(ROOT / "model" / "pretrained_model.pth"))
-
-app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
-
 
 @app.get("/health")
 def health() -> dict[str, str]:
@@ -88,3 +89,7 @@ async def upload_video(file: UploadFile = File(...)) -> dict:
         "average_fake_probability": round(avg_prob * 100, 2),
         "explanation": max(set(explanations), key=explanations.count),
     }
+
+
+# Keep frontend mount at the end so API routes take priority.
+app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
