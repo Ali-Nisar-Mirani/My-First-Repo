@@ -6,6 +6,7 @@ from pathlib import Path
 import cv2
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from model import DeepfakeModel
 from utils import cleanup_path, crop_largest_face, detect_faces, extract_frames
@@ -20,13 +21,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-UPLOAD_DIR = Path("backend/uploads")
-FRAME_DIR = Path("backend/temp_frames")
+ROOT = Path(__file__).resolve().parent.parent
+UPLOAD_DIR = ROOT / "backend" / "uploads"
+FRAME_DIR = ROOT / "backend" / "temp_frames"
+FRONTEND_DIR = ROOT / "frontend"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 FRAME_DIR.mkdir(parents=True, exist_ok=True)
 
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-model = DeepfakeModel(model_path="model/pretrained_model.pth")
+model = DeepfakeModel(model_path=str(ROOT / "model" / "pretrained_model.pth"))
+
+app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
 
 
 @app.get("/health")
@@ -44,8 +49,7 @@ async def upload_video(file: UploadFile = File(...)) -> dict:
     video_path = UPLOAD_DIR / f"{token}{suffix}"
     frames_path = FRAME_DIR / token
 
-    data = await file.read()
-    video_path.write_bytes(data)
+    video_path.write_bytes(await file.read())
 
     frame_files = extract_frames(video_path, frames_path, frame_every_seconds=1.0)
     if not frame_files:
@@ -60,8 +64,7 @@ async def upload_video(file: UploadFile = File(...)) -> dict:
         frame = cv2.imread(str(frame_file))
         if frame is None:
             continue
-        faces = detect_faces(frame, face_cascade)
-        face = crop_largest_face(frame, faces)
+        face = crop_largest_face(frame, detect_faces(frame, face_cascade))
         if face is None:
             continue
         pred = model.predict_face(face)
@@ -75,16 +78,13 @@ async def upload_video(file: UploadFile = File(...)) -> dict:
         raise HTTPException(status_code=400, detail="No faces detected for analysis")
 
     avg_prob = sum(probs) / len(probs)
-    threshold = 0.6
-    result = "FAKE" if avg_prob >= threshold else "REAL"
+    result = "FAKE" if avg_prob >= 0.6 else "REAL"
     confidence = round((avg_prob if result == "FAKE" else 1 - avg_prob) * 100, 2)
-
-    common_explanation = max(set(explanations), key=explanations.count)
 
     return {
         "result": result,
         "confidence": confidence,
         "frames_analyzed": len(probs),
         "average_fake_probability": round(avg_prob * 100, 2),
-        "explanation": common_explanation,
+        "explanation": max(set(explanations), key=explanations.count),
     }

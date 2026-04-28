@@ -40,13 +40,14 @@ uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### 2) Frontend
-Open `frontend/index.html` directly in your browser, or serve it:
-```bash
-cd frontend
-python -m http.server 5500
-```
-Then open `http://127.0.0.1:5500`.
+No separate frontend server is required now. FastAPI serves the UI automatically.
 
+Open: `http://127.0.0.1:8000`
+
+
+## Run check
+- Visit `http://127.0.0.1:8000/health` and confirm `{"status":"ok"}`
+- Then open `http://127.0.0.1:8000` and upload a video
 
 ## Troubleshooting
 - **Error: Failed to fetch** usually means the frontend cannot reach the backend.
