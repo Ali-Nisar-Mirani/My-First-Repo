@@ -59,8 +59,8 @@ async function checkBackendStatus() {
     apiStatus.textContent = `Backend connected: ${API_BASE}`;
     apiStatus.className = "status ok";
   } catch {
-    apiStatus.textContent = `Backend not reachable at ${API_BASE}. Start: uvicorn backend.app:app --reload --port 8000`;
-    apiStatus.className = "status bad";
+    apiStatus.textContent = "Offline mode: backend not detected. You can still run demo analysis; start backend for real ML inference.";
+    apiStatus.className = "status warn";
   }
 }
 
@@ -152,8 +152,8 @@ analyzeBtn.addEventListener("click", async () => {
     if (msg.toLowerCase().includes("failed to fetch")) {
       const demo = runDemoLocalAnalysis(selectedFile);
       renderResult(demo);
-      apiStatus.textContent = `Backend offline — using demo fallback mode. For real ML inference, start backend at ${API_BASE}.`;
-      apiStatus.className = "status bad";
+      apiStatus.textContent = "Demo analysis complete (offline mode). Start backend anytime to enable real ML inference.";
+      apiStatus.className = "status warn";
     } else {
       showError(msg);
     }

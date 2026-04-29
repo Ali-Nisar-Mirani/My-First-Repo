@@ -104,3 +104,5 @@ Open: `http://127.0.0.1:8000`
 ## Demo fallback mode
 If the backend is unreachable, the frontend now shows a **demo fallback result** so the UI remains usable.
 This fallback is **not real ML inference**; start backend at `http://127.0.0.1:8000` for true deepfake detection.
+
+- Offline mode banner is expected if backend is not running; analyze will use demo fallback without blocking.
