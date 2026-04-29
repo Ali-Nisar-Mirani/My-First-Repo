@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deepfake Video Detector</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Deepfake Video Detector</h1>
+      <p class="subtitle">Detect AI-generated videos instantly</p>
+      <p id="apiStatus" class="status">Checking backend connection...</p>
+
+      <section id="dropZone" class="upload-box">
+        <input id="fileInput" type="file" accept="video/*" hidden />
+        <p>Drag & drop video here, or <button id="browseBtn">browse</button></p>
+        <p id="fileName" class="filename">No file selected</p>
+      </section>
+
+      <video id="videoPreview" class="preview hidden" controls></video>
+
+      <button id="analyzeBtn" class="analyze-btn" disabled>Analyze Video</button>
+
+      <section id="loading" class="hidden">
+        <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+        <p>Analyzing frames... please wait</p>
+      </section>
+
+      <section id="resultCard" class="result-card hidden"></section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
